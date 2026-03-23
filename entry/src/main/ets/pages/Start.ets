@@ -27,13 +27,17 @@ struct Start {
   }
 }*/
 
+import { SAFE_TOP, SAFE_BOTTOM } from '../constants';
 
 @Entry
 @Component
 struct Start {
+
   router = this.getUIContext().getRouter();
   // 定时器 id
   timerId: number = 0;
+  // @State safeTop: number = 0;
+  @StorageProp(SAFE_TOP) safeTop: number = 0;
 
   aboutToAppear(): void {
     // 打印生命周期触发日志，记录定时器创建开始
@@ -45,6 +49,10 @@ struct Start {
     }, 5000);
     // 打印定时器创建成功日志，输出定时器ID
     console.log(`Start页 定时器创建成功：timerId = ${this.timerId}`);
+
+    // 模拟获取安全区数值
+    console.log('safeTop=', this.safeTop); //To check the value of safeTop
+
   }
 
   aboutToDisappear() {
@@ -60,6 +68,7 @@ struct Start {
     Stack({ alignContent: Alignment.TopEnd }) {
       Image($r('app.media.ad'))
       Button('跳过')
+        .margin({ top: this.safeTop + 10, right: 10 })
         .margin(10)
         .backgroundColor('#4d000000')
         .onClick(() => {

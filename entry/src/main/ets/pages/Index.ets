@@ -25,6 +25,13 @@ struct Index {
 
 
 import { TabType } from '../models';
+import Recommend from '../views/Recommend';
+import Find from '../views/Find';
+import Moment from '../views/Moment';
+import Mine from '../views/Mine';
+
+import { SAFE_TOP, SAFE_BOTTOM } from '../constants';
+
 @Entry
 @Component
 struct Index {
@@ -65,13 +72,24 @@ struct Index {
     Tabs({ barPosition: BarPosition.End }) {
       ForEach(this.tabData, (item: TabType) => {
         TabContent() {
-          Text(item.text + '内容')
+          // Text(item.text + '内容')
+          if (item.name == 'recommend') {
+            Recommend()
+          } else if (item.name == 'find') {
+            Find()
+          } else if (item.name == 'moment') {
+            Moment()
+          } else if (item.name == 'mine') {
+            Mine()
+          }
         }
+        .padding({ top: this.safeTop })
         .backgroundColor('#131215')
         .tabBar(this.tabBarBuilder(item))
         // .tabBar((item))
       })
     }
+    .padding({ bottom: this.safeBottom })
     .backgroundColor('#3b3f42')
     .onChange((index: number) => {
       this.isActive = this.tabData[index].name;
@@ -79,6 +97,12 @@ struct Index {
   }
 
   @State isActive: string = 'recommend';
+
+  @StorageProp(SAFE_TOP) safeTop: number = 0;
+  @StorageProp(SAFE_BOTTOM) safeBottom: number = 0;
+
+
+
 
 }
 
