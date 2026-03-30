@@ -1,5 +1,5 @@
 import { getMomentList } from '../apis';
-import { MomentListType } from '../models';
+import { MomentListType } from '../models/Index';
 
 @Component
 export default struct Moment {
