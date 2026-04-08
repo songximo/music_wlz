@@ -56,5 +56,11 @@ export class PlayState {
   playMode: 'auto' | 'repeat' | 'random' = 'auto';	// 播放模式
   playList: SongItemType[] = [];	// 播放列表
 }
+/*export class AVPlayerManager {
+  static singPlay(item: SongItem) {}
+  static pause() {}
+  static prevPlay() {}
+  static nextPlay() {}
+}*/
 
 
