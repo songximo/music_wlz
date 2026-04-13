@@ -11,6 +11,7 @@ export const getData = async (path: string) => {
   } catch(error) {
     req.destroy()
     AlertDialog.show({ message: '无法请求网络数据'});
+    // AlertDialog.open({ message: '无法请求网络数据'});
     throw new Error(`无法请求网络数据：${error.code} ${error.message}`);
   }
 }

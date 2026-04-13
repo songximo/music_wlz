@@ -1,3 +1,4 @@
+/*
 import { SongItem, PlayState } from '../models/Index';
 @Entry
 @Component
@@ -284,6 +285,7 @@ struct Play {
     .backgroundColor('#333')
   }
 }
+*/
 
 
 /*
@@ -577,8 +579,6 @@ struct Play {
               .swipeAction({ end: this.deleteButton(index) })
             })
           }
-
-
           }
         .height(400)
       }
@@ -591,3 +591,369 @@ struct Play {
   }
 }
 */
+
+import { SongItem, PlayState } from '../models/Index';
+
+import { SONG_KEY } from '../constants';
+import AVPlayerManager from '../utils/AVPlayerManager';
+
+@Entry
+@Component
+struct Play {
+
+  // @State deleteButton: boolean = false;//增
+
+  @State panelHeight: string = '0%';
+  // @State playState: PlayState = new PlayState();
+  @State rotateAngle: number = 0;
+
+  @StorageLink(SONG_KEY)// changed from @State
+  @Watch('changeAnimate')
+  playState: PlayState = new PlayState();
+
+  //定义动画对象，主要用于实现唱片的旋转效果
+  animatorResult = this.getUIContext().createAnimator({
+    duration: 1000 * 15,
+    easing: 'linear',
+    delay: 0,
+    fill: 'none',
+    direction: 'normal',
+    iterations: -1,
+    begin: 0,
+    end: 360
+  })
+
+  aboutToAppear() {
+    //用于在动画对象接收到帧时，控制唱片的旋转角度发生变化
+    this.animatorResult.onFrame = val => {
+      this.rotateAngle = val;
+    };
+  }
+
+  build() {
+    Stack({ alignContent: Alignment.Bottom }) {
+      // 播放区域
+      Stack() {
+        // 背景图区域
+        Image(this.playState.img)
+          .width('100%')
+          .height('100%')
+          .blur(1000)
+        // 内容区域
+        Column() {
+          Column() {
+            // 封面图区域
+            Stack({ alignContent: Alignment.Top }) {
+              Row() {
+                Row() {
+                  // 唱片
+                  Image(this.playState.img)
+                    .width('70%')
+                    .borderRadius(400)
+                }
+                .backgroundImage($r('app.media.ic_cd'))
+                .backgroundImageSize(ImageSize.Cover)
+                .justifyContent(FlexAlign.Center)
+                .width('100%')
+                .borderRadius(400)
+                .clip(true)
+                .aspectRatio(1)
+                .rotate({ angle: this.rotateAngle }) //用于控制唱片的旋转
+              }
+              .margin({ top: 50 })
+              .width('90%')
+              .aspectRatio(1)
+              .justifyContent(FlexAlign.Center)
+              .padding(24)
+
+              // 唱针
+              Image($r('app.media.ic_stylus'))
+                .width(200)
+                .aspectRatio(1)
+                .rotate({
+                  //用于控制唱针的旋转，也就是控制唱针移入和移除唱片
+                  angle: this.playState.isPlay ? -45 : -55,
+                  centerX: 100,
+                  centerY: 30
+                })
+                .animation({ duration: 500 })
+            }
+
+            // 歌曲信息区域
+            Stack() {
+              Column({ space: 8 }) {
+                Text(this.playState.title)
+                  .fontSize(28)
+                  .fontWeight(FontWeight.Bold)
+                  .fontColor(Color.White)
+                Text(this.playState.artist)
+                  .fontSize(18)
+                  .fontColor(Color.White)
+              }
+              .layoutWeight(1)
+              .justifyContent(FlexAlign.Center)
+            }
+            .layoutWeight(1)
+
+            Row() {
+              Badge({ value: '99+', style: { badgeSize: 12, badgeColor: '#45CCCCCC', borderWidth: 0 } }) {
+                Image($r('app.media.ic_like'))
+                  .fillColor(Color.White)
+                  .width(24)
+                  .margin({ right: 2 })
+              }
+
+              Badge({ value: '10W', style: { badgeSize: 12, badgeColor: '#45cccccc', borderWidth: 0 } }) {
+                Image($r('app.media.ic_comment_o'))
+                  .fillColor(Color.White)
+                  .width(18)
+                  .margin({ right: 4 })
+              }
+
+              Badge({ value: 'hot', style: { badgeSize: 12, badgeColor: '#a8ff3131', borderWidth: 0 } }) {
+                Image($r('app.media.ic_bells_o'))
+                  .fillColor(Color.White)
+                  .width(24)
+              }
+
+              Badge({ value: 'vip', style: { badgeSize: 12, badgeColor: '#b7efd371', borderWidth: 0 } }) {
+                Image($r('app.media.ic_download_o'))
+                  .fillColor(Color.White)
+                  .width(24)
+              }
+            }
+            .width('100%')
+            .justifyContent(FlexAlign.SpaceAround)
+
+            // 播放控制区域
+            Column() {
+              // 播放位置区域
+              Row({ space: 4 }) {
+                // 播放时间
+                Text(this.number2time(this.playState.time))
+                  .fontSize(12)
+                  .fontColor(Color.White)
+                // 进度条
+                Slider({ value: this.playState.time, min: 0, max: this.playState.duration })
+                  .onChange(value => {
+                    AVPlayerManager.player.seek(value);
+                  })
+                  .layoutWeight(1)
+                  .blockColor(Color.White)
+                  .selectedColor(Color.White)
+                  .trackColor('#ccc5c5c5')
+                  .trackThickness(2)
+                // 歌曲时长
+                Text(this.number2time(this.playState.duration))
+                  .fontSize(12)
+                  .fontColor(Color.White)
+              }
+              .width('100%')
+              .padding(24)
+
+              // 播放控制按钮区域
+              Row() {
+                // “播放模式”按钮
+                if (this.playState.playMode == 'auto') {
+                  // 顺序播放
+                  Image($r('app.media.ic_auto'))
+                    .fillColor(Color.White)
+                    .width(30)
+                    .onClick(() => {
+                      this.playState.playMode = 'repeat';
+                    })
+                } else if (this.playState.playMode == 'repeat') {
+                  // 单曲循环
+                  Image($r('app.media.ic_repeat'))
+                    .fillColor(Color.White)
+                    .width(30)
+                    // .onClick(() => {
+                    //   this.playState.playMode = 'random';
+                    // })
+                } else if (this.playState.playMode == 'random') {
+                  // 随机播放
+                  Image($r('app.media.ic_random'))
+                    .fillColor(Color.White)
+                    .width(30)
+                    // .onClick(() => {
+                    //   this.playState.playMode = 'auto';
+                    // })
+                }
+                // “上一首”按钮
+                Image($r('app.media.ic_prev'))
+                  .fillColor(Color.White)
+                  .width(30)
+                  // .onClick(() => {
+                  //   AVPlayerManager.prevPlay();
+                  // })
+                // “播放/暂停”按钮
+                Image(this.playState.isPlay ? $r('app.media.ic_paused') : $r('app.media.ic_play'))
+                  .fillColor(Color.White)
+                  .width(50)
+                  .onClick(() => {
+                    if (this.playState.isPlay) {
+                      AVPlayerManager.pause();
+                    } else {
+                      AVPlayerManager.singPlay(this.playState.playList[this.playState.playIndex]);
+                    }
+                  })
+                // “下一首”按钮
+                Image($r('app.media.ic_next'))
+                  .fillColor(Color.White)
+                  .width(30)
+                  // .onClick(() => {
+                  //   AVPlayerManager.nextPlay();
+                  // })
+                // “播放列表”按钮
+                Image($r('app.media.ic_song_list'))
+                  .fillColor(Color.White)
+                  .width(30)
+                  .onClick(() => {
+                    this.panelHeight = '100%';
+                  })
+              }
+              .width('100%')
+              .padding({ bottom: 24 })
+              .justifyContent(FlexAlign.SpaceAround)
+            }
+
+            .width('100%')
+          }
+          .layoutWeight(1)
+          .width('100%')
+        }
+        .padding({ bottom: 20 })
+      }
+
+      .width('100%')
+      .height('100%')
+      .backgroundColor(Color.Transparent)
+
+      Column() {
+        Column()
+          .width('100%')
+          .layoutWeight(1)
+          .onClick(() => {
+            this.panelHeight = '0%'; //
+          })
+        // 播放列表区域，默认隐藏
+        Column() {
+          // 播放列表-标题区域
+          Row() {
+            Row() {
+              Image($r('app.media.ic_play'))
+                .width(20)
+                .fillColor('#ff5186')
+            }
+            .width(50)
+            .aspectRatio(1)
+            .justifyContent(FlexAlign.Center)
+
+            Row({ space: 8 }) {
+              Text(`播放列表 (${this.playState.playList.length})`)
+                .fontColor(Color.White)
+                .fontSize(14)
+            }
+            .layoutWeight(1)
+
+            Image($r('app.media.ic_close'))
+              .fillColor('#ffa49a9a')
+              .width(24)
+              .height(24)
+              .margin({ right: 16 })
+              .onClick(() => {
+                this.panelHeight = '0%';
+              })
+          }
+          .width('100%')
+          .backgroundColor('#ff353333')
+          .padding(8)
+          .border({ width: { bottom: 1 }, color: '#12ec5c87' })
+          .borderRadius({ topLeft: 4, topRight: 4 })
+
+          // 播放列表-内容区域
+          List() {
+            ForEach(this.playState.playList, (item: SongItem, index: number) => {
+              ListItem() {
+                Row() {
+                  Row() {
+                    Text((index + 1).toString())
+                      .fontColor('#ffa49a9a')
+                  }
+                  .width(50)
+                  .aspectRatio(1)
+                  .justifyContent(FlexAlign.Center)
+
+                  // 播放列表中的歌曲
+                  Row({ space: 10 }) {
+                    Column() {
+                      Text(item.title)
+                        .fontSize(14)
+                        .fontColor(this.playState.playIndex == index ? '#f04c7e' : '#ffa49a9a')
+                      Text(item.artist)
+                        .fontSize(12)
+                        .fontColor(this.playState.playIndex == index ? '#f04c7e' : Color.Gray)
+                    }
+                    .layoutWeight(1)
+                    .alignItems(HorizontalAlign.Start)
+                    .justifyContent(FlexAlign.Center)
+                  }
+                  .layoutWeight(1)
+                  // .onClick(() => {
+                  //   AVPlayerManager.singPlay(this.playState.playList[index]);
+                  // })
+
+                  Image($r('app.media.ic_more'))
+                    .width(24)
+                    .height(24)
+                    .margin({ right: 16 })
+                    .fillColor(Color.Gray)
+                }
+                .alignItems(VerticalAlign.Center)
+              }
+              .border({ width: { bottom: 1 }, color: '#12ec5c87' })
+              // .swipeAction({ end: this.deleteButton(index) })
+            })
+          }
+              .layoutWeight(1)
+              .width('100%')
+              .height('100%')
+              .backgroundColor('#ff353333')
+          }
+          .height(400)
+        }
+        .height(this.panelHeight)
+        .animation({ duration: 300 })
+      }
+      .width('100%')
+      .height('100%')
+      .backgroundColor('#333')
+    }
+
+  changeAnimate() {
+    if (this.playState.isPlay) {
+      this.animatorResult.play();
+    } else {
+      this.animatorResult.pause();
+    }
+  }
+
+
+  number2time(number: number) {
+    // 判断是否大于1分钟
+    if (number >= 60 * 1000) {
+      const s = Math.ceil(number / 1000 % 60);
+      const m = Math.floor(number / 1000 / 60);
+      const second = s.toString().padStart(2, '0');
+      const minute = m.toString().padStart(2, '0');
+      return minute + ':' + second;
+    } else {
+      const s = Math.ceil(number / 1000 % 60);
+      const second = s.toString().padStart(2, '0');
+      return '00:' + second;
+    }
+  }
+
+
+
+}
