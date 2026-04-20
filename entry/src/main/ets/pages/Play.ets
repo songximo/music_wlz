@@ -600,9 +600,6 @@ import AVPlayerManager from '../utils/AVPlayerManager';
 @Entry
 @Component
 struct Play {
-
-  // @State deleteButton: boolean = false;//增
-
   @State panelHeight: string = '0%';
   // @State playState: PlayState = new PlayState();
   @State rotateAngle: number = 0;
@@ -610,6 +607,8 @@ struct Play {
   @StorageLink(SONG_KEY)// changed from @State
   @Watch('changeAnimate')
   playState: PlayState = new PlayState();
+
+  router = this.getUIContext().getRouter();
 
   //定义动画对象，主要用于实现唱片的旋转效果
   animatorResult = this.getUIContext().createAnimator({
@@ -783,9 +782,9 @@ struct Play {
                 Image($r('app.media.ic_prev'))
                   .fillColor(Color.White)
                   .width(30)
-                  // .onClick(() => {
-                  //   AVPlayerManager.prevPlay();
-                  // })
+                  .onClick(() => {
+                    AVPlayerManager.prevPlay();
+                  })
                 // “播放/暂停”按钮
                 Image(this.playState.isPlay ? $r('app.media.ic_paused') : $r('app.media.ic_play'))
                   .fillColor(Color.White)
@@ -801,9 +800,9 @@ struct Play {
                 Image($r('app.media.ic_next'))
                   .fillColor(Color.White)
                   .width(30)
-                  // .onClick(() => {
-                  //   AVPlayerManager.nextPlay();
-                  // })
+                  .onClick(() => {
+                    AVPlayerManager.nextPlay();
+                  })
                 // “播放列表”按钮
                 Image($r('app.media.ic_song_list'))
                   .fillColor(Color.White)
@@ -899,9 +898,9 @@ struct Play {
                     .justifyContent(FlexAlign.Center)
                   }
                   .layoutWeight(1)
-                  // .onClick(() => {
-                  //   AVPlayerManager.singPlay(this.playState.playList[index]);
-                  // })
+                  .onClick(() => {
+                    AVPlayerManager.singPlay(this.playState.playList[index]);
+                  })
 
                   Image($r('app.media.ic_more'))
                     .width(24)
@@ -912,7 +911,7 @@ struct Play {
                 .alignItems(VerticalAlign.Center)
               }
               .border({ width: { bottom: 1 }, color: '#12ec5c87' })
-              // .swipeAction({ end: this.deleteButton(index) })
+              .swipeAction({ end: this.deleteButton(index) })
             })
           }
               .layoutWeight(1)
@@ -952,6 +951,22 @@ struct Play {
       const second = s.toString().padStart(2, '0');
       return '00:' + second;
     }
+  }
+
+  @Builder
+  deleteButton(index: number) {
+    Button('删除')
+      .backgroundColor('#ec5c87')
+      .fontColor('#fff')
+      .width(80)
+      .height('100%')
+      .type(ButtonType.Normal)
+      .onClick(() => {
+        if (AVPlayerManager.currentSong.playList.length <= 1) {
+          this.router.back();
+        }
+        AVPlayerManager.remove(index);
+      })
   }
 
 

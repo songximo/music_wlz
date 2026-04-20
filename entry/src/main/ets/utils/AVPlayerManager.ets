@@ -20,6 +20,9 @@ export default class AVPlayerManager {
       } else if (state == 'prepared') {
         AVPlayerManager.player.play();
         AVPlayerManager.currentSong.isPlay = true;
+      } else if (state == 'completed') {
+        // 歌曲播放结束，切换下一首歌曲
+        AVPlayerManager.nextPlay(AVPlayerManager.currentSong.playMode == 'repeat');
       }
     });
     // 监听durationUpdate事件，获取歌曲时长
@@ -77,5 +80,75 @@ export default class AVPlayerManager {
     AVPlayerManager.currentSong.isPlay =  false;
     AppStorage.setOrCreate(SONG_KEY, AVPlayerManager.currentSong);
   }
+
+  // 上一首
+  static prevPlay() {
+    // 判断播放模式是否为随机播放
+    if (AVPlayerManager.currentSong.playMode == 'random') {
+      AVPlayerManager.currentSong.playIndex = AVPlayerManager.getRandomIndex();
+    } else {
+      AVPlayerManager.currentSong.playIndex--;
+      // 如果当前是播放列表中的第一首歌曲，则切换到最后一首歌曲
+      if (AVPlayerManager.currentSong.playIndex < 0) {
+        AVPlayerManager.currentSong.playIndex = AVPlayerManager.currentSong.playList.length - 1;
+      }
+    }
+    AVPlayerManager.singPlay(AVPlayerManager.currentSong.playList[AVPlayerManager.currentSong.playIndex]);
+  }
+  // 下一首
+  static nextPlay(isRepeat?: boolean) { //isRepeat参数表述是否重复播放，“？”表述参数是可选参数。
+    if (!isRepeat) {
+      if (AVPlayerManager.currentSong.playMode == 'random') {
+        AVPlayerManager.currentSong.playIndex = AVPlayerManager.getRandomIndex();
+      } else {
+        AVPlayerManager.currentSong.playIndex++;
+        // 如果当前是播放列表中的最后一首歌曲，则切换到第一首歌曲
+        if (AVPlayerManager.currentSong.playIndex > AVPlayerManager.currentSong.playList.length - 1) {
+          AVPlayerManager.currentSong.playIndex = 0;
+        }
+      }
+    }
+    AVPlayerManager.singPlay(AVPlayerManager.currentSong.playList[AVPlayerManager.currentSong.playIndex]);
+  }
+  // 获取随机播放的索引
+  static getRandomIndex() {
+    let randomIndex = 0;
+    if (AVPlayerManager.currentSong.playList.length > 1) {
+      do {
+        randomIndex = Math.floor(Math.random() * AVPlayerManager.currentSong.playList.length);
+      } while(AVPlayerManager.currentSong.playIndex == randomIndex)
+    }
+    return randomIndex;
+  }
+
+
+  // 删除播放列表中的歌曲
+  static remove(index: number) {
+    // 判断要删除的歌曲是否是当前正在播放的歌曲
+    if (index == AVPlayerManager.currentSong.playIndex) {
+      // 判断播放列表中是否有超过1首的歌曲
+      if (AVPlayerManager.currentSong.playList.length > 1) {
+        // 删除播放列表中的歌曲
+        AVPlayerManager.currentSong.playList.splice(index, 1);
+        // 设置要播放的歌曲，如果删除的是最后一首，则设置第一首为要播放的歌曲
+        AVPlayerManager.currentSong.playIndex = (AVPlayerManager.currentSong.playIndex + AVPlayerManager.currentSong.playList.length) % AVPlayerManager.currentSong.playList.length;
+        // 播放歌曲
+        AVPlayerManager.singPlay(AVPlayerManager.currentSong.playList[AVPlayerManager.currentSong.playIndex]);
+      } else {
+        // 删除歌曲后，播放列表中已经没有歌曲了，重置播放器
+        AVPlayerManager.currentSong = new PlayState();
+      }
+    } else {
+      // 判断要删除的歌曲是否在当前正在播放的歌曲的前面
+      if (index < AVPlayerManager.currentSong.playIndex) {
+        // 由于前面的歌曲删除了，所以当前正在播放的歌曲的索引要减1
+        AVPlayerManager.currentSong.playIndex--;
+      }
+      // 删除播放列表中的歌曲
+      AVPlayerManager.currentSong.playList.splice(index, 1);
+    }
+    AppStorage.setOrCreate(SONG_KEY, AVPlayerManager.currentSong);
+  }
+
 
 }
